@@ -1,6 +1,6 @@
 {
   "name": "cortex-plugin-video-processor",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Transcribe, translate, caption, clip video/audio files",
   "kind": "esm",
   "entryPoint": "mod.ts",
@@ -18,55 +18,149 @@
       "name": "video_transcribe",
       "description": "Transcribe video/audio to text or subtitles",
       "params": [
-        { "name": "file_path", "type": "string", "description": "Path to video or audio file", "required": true },
+        {
+          "name": "file_path",
+          "type": "string",
+          "description": "Path to video or audio file",
+          "required": true
+        },
         { "name": "language", "type": "string", "description": "Language code", "default": "en" },
-        { "name": "output", "type": "enum", "description": "Output format", "options": ["text", "srt", "vtt", "json"] },
-        { "name": "model", "type": "enum", "description": "Whisper model size", "options": ["tiny", "base", "small", "medium", "large"] }
+        {
+          "name": "output",
+          "type": "enum",
+          "description": "Output format",
+          "options": ["text", "srt", "vtt", "json"]
+        },
+        {
+          "name": "model",
+          "type": "enum",
+          "description": "Whisper model size",
+          "options": ["tiny", "base", "small", "medium", "large"]
+        }
       ]
     },
     {
       "name": "video_translate",
       "description": "Translate transcript to another language",
       "params": [
-        { "name": "transcript", "type": "string", "description": "Transcript text", "required": true },
-        { "name": "target_language", "type": "string", "description": "Target language ISO code", "required": true },
-        { "name": "source_language", "type": "string", "description": "Source language ISO code", "default": "en" }
+        {
+          "name": "transcript",
+          "type": "string",
+          "description": "Transcript text",
+          "required": true
+        },
+        {
+          "name": "target_language",
+          "type": "string",
+          "description": "Target language ISO code",
+          "required": true
+        },
+        {
+          "name": "source_language",
+          "type": "string",
+          "description": "Source language ISO code",
+          "default": "en"
+        }
       ]
     },
     {
       "name": "video_generate_captions",
       "description": "Generate subtitle captions for video",
       "params": [
-        { "name": "file_path", "type": "string", "description": "Path to video file", "required": true },
+        {
+          "name": "file_path",
+          "type": "string",
+          "description": "Path to video file",
+          "required": true
+        },
         { "name": "language", "type": "string", "description": "Language code", "default": "en" },
-        { "name": "format", "type": "enum", "description": "Subtitle format", "options": ["srt", "vtt", "ass"] }
+        {
+          "name": "format",
+          "type": "enum",
+          "description": "Subtitle format",
+          "options": ["srt", "vtt", "ass"]
+        }
       ]
     },
     {
       "name": "video_extract_clip",
       "description": "Extract a clip from video",
       "params": [
-        { "name": "file_path", "type": "string", "description": "Path to video file", "required": true },
-        { "name": "start_time", "type": "string", "description": "Start time (HH:MM:SS)", "required": true },
-        { "name": "duration", "type": "string", "description": "Duration in seconds or HH:MM:SS", "required": true },
-        { "name": "output_path", "type": "string", "description": "Output file path", "required": true }
+        {
+          "name": "file_path",
+          "type": "string",
+          "description": "Path to video file",
+          "required": true
+        },
+        {
+          "name": "start_time",
+          "type": "string",
+          "description": "Start time (HH:MM:SS)",
+          "required": true
+        },
+        {
+          "name": "duration",
+          "type": "string",
+          "description": "Duration in seconds or HH:MM:SS",
+          "required": true
+        },
+        {
+          "name": "output_path",
+          "type": "string",
+          "description": "Output file path",
+          "required": true
+        }
       ]
     },
     {
       "name": "video_extract_highlights",
       "description": "Extract highlight reel from video",
       "params": [
-        { "name": "file_path", "type": "string", "description": "Path to video file", "required": true },
-        { "name": "transcript", "type": "string", "description": "Transcript for highlight detection", "required": true },
-        { "name": "max_duration", "type": "number", "description": "Maximum highlight reel duration in seconds", "default": 60 }
+        {
+          "name": "file_path",
+          "type": "string",
+          "description": "Path to video file",
+          "required": true
+        },
+        {
+          "name": "transcript",
+          "type": "string",
+          "description": "Transcript for highlight detection",
+          "required": true
+        },
+        {
+          "name": "max_duration",
+          "type": "number",
+          "description": "Maximum highlight reel duration in seconds",
+          "default": 60
+        }
       ]
     }
   ],
   "ui": {
     "section": "Processing",
     "fields": [
-      { "key": "ffmpegPath", "label": "FFmpeg Path", "type": "text", "description": "Path to ffmpeg executable", "default": "ffmpeg" },
-      { "key": "whisperModel", "label": "Whisper Model", "type": "select", "description": "Default Whisper model size", "default": "base", "options": [{ "label": "Tiny", "value": "tiny" }, { "label": "Base", "value": "base" }, { "label": "Small", "value": "small" }, { "label": "Medium", "value": "medium" }, { "label": "Large", "value": "large" }] }
+      {
+        "key": "ffmpegPath",
+        "label": "FFmpeg Path",
+        "type": "text",
+        "description": "Path to ffmpeg executable",
+        "default": "ffmpeg"
+      },
+      {
+        "key": "whisperModel",
+        "label": "Whisper Model",
+        "type": "select",
+        "description": "Default Whisper model size",
+        "default": "base",
+        "options": [
+          { "label": "Tiny", "value": "tiny" },
+          { "label": "Base", "value": "base" },
+          { "label": "Small", "value": "small" },
+          { "label": "Medium", "value": "medium" },
+          { "label": "Large", "value": "large" }
+        ]
+      }
     ]
   },
   "dependencies": {},

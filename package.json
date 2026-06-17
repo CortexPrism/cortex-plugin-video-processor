@@ -11,7 +11,17 @@
     "fmt:check": "prettier --check .",
     "lint": "eslint ."
   },
-  "keywords": ["cortex", "plugin", "cortex-plugin", "esm", "video", "audio", "transcribe", "ffmpeg", "whisper"],
+  "keywords": [
+    "cortex",
+    "plugin",
+    "cortex-plugin",
+    "esm",
+    "video",
+    "audio",
+    "transcribe",
+    "ffmpeg",
+    "whisper"
+  ],
   "author": "CortexPrism",
   "license": "MIT",
   "repository": {
