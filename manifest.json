@@ -1,6 +1,6 @@
 {
   "name": "cortex-plugin-video-processor",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Transcribe, translate, caption, clip video/audio files",
   "kind": "esm",
   "entryPoint": "mod.ts",
@@ -24,18 +24,34 @@
           "description": "Path to video or audio file",
           "required": true
         },
-        { "name": "language", "type": "string", "description": "Language code", "default": "en" },
+        {
+          "name": "language",
+          "type": "string",
+          "description": "Language code",
+          "default": "en"
+        },
         {
           "name": "output",
-          "type": "enum",
+          "type": "string",
           "description": "Output format",
-          "options": ["text", "srt", "vtt", "json"]
+          "enum": [
+            "text",
+            "srt",
+            "vtt",
+            "json"
+          ]
         },
         {
           "name": "model",
-          "type": "enum",
+          "type": "string",
           "description": "Whisper model size",
-          "options": ["tiny", "base", "small", "medium", "large"]
+          "enum": [
+            "tiny",
+            "base",
+            "small",
+            "medium",
+            "large"
+          ]
         }
       ]
     },
@@ -73,12 +89,21 @@
           "description": "Path to video file",
           "required": true
         },
-        { "name": "language", "type": "string", "description": "Language code", "default": "en" },
+        {
+          "name": "language",
+          "type": "string",
+          "description": "Language code",
+          "default": "en"
+        },
         {
           "name": "format",
-          "type": "enum",
+          "type": "string",
           "description": "Subtitle format",
-          "options": ["srt", "vtt", "ass"]
+          "enum": [
+            "srt",
+            "vtt",
+            "ass"
+          ]
         }
       ]
     },
@@ -138,27 +163,46 @@
     }
   ],
   "ui": {
-    "section": "Processing",
-    "fields": [
+    "settings": [
       {
-        "key": "ffmpegPath",
-        "label": "FFmpeg Path",
-        "type": "text",
-        "description": "Path to ffmpeg executable",
-        "default": "ffmpeg"
-      },
-      {
-        "key": "whisperModel",
-        "label": "Whisper Model",
-        "type": "select",
-        "description": "Default Whisper model size",
-        "default": "base",
-        "options": [
-          { "label": "Tiny", "value": "tiny" },
-          { "label": "Base", "value": "base" },
-          { "label": "Small", "value": "small" },
-          { "label": "Medium", "value": "medium" },
-          { "label": "Large", "value": "large" }
+        "section": "Processing",
+        "fields": [
+          {
+            "key": "ffmpegPath",
+            "label": "FFmpeg Path",
+            "type": "text",
+            "description": "Path to ffmpeg executable",
+            "default": "ffmpeg"
+          },
+          {
+            "key": "whisperModel",
+            "label": "Whisper Model",
+            "type": "select",
+            "description": "Default Whisper model size",
+            "default": "base",
+            "enum": [
+              {
+                "label": "Tiny",
+                "value": "tiny"
+              },
+              {
+                "label": "Base",
+                "value": "base"
+              },
+              {
+                "label": "Small",
+                "value": "small"
+              },
+              {
+                "label": "Medium",
+                "value": "medium"
+              },
+              {
+                "label": "Large",
+                "value": "large"
+              }
+            ]
+          }
         ]
       }
     ]
@@ -168,7 +212,10 @@
     "cortex": ">=1.0.0"
   },
   "aiDisclosure": {
-    "tools": ["Claude Code (Anthropic)"],
+    "tools": [
+      "Claude Code (Anthropic)"
+    ],
     "humanReview": true
-  }
+  },
+  "homepage": "https://github.com/CortexPrism/cortex-plugin-video-processor"
 }
