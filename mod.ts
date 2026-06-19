@@ -42,7 +42,13 @@ let config: VideoConfig = {
 
 function validateFilePath(path: unknown, toolName: string, start: number): ToolCallResult | null {
   if (!path || typeof path !== 'string') {
-    return { toolName, success: false, output: '', error: 'file_path must be a non-empty string', durationMs: Date.now() - start };
+    return {
+      toolName,
+      success: false,
+      output: '',
+      error: 'file_path must be a non-empty string',
+      durationMs: Date.now() - start,
+    };
   }
   return null;
 }
@@ -51,13 +57,17 @@ function formatDuration(seconds: number): string {
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
   const s = Math.floor(seconds % 60);
-  return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${
+    s.toString().padStart(2, '0')
+  }`;
 }
 
 interface FfprobeData {
   duration: number;
   format: string;
-  streams: Array<{ codec_type: string; codec_name: string; channels?: number; sample_rate?: number }>;
+  streams: Array<
+    { codec_type: string; codec_name: string; channels?: number; sample_rate?: number }
+  >;
 }
 
 /**
@@ -68,8 +78,10 @@ async function probeMedia(filePath: string): Promise<FfprobeData | null> {
   try {
     const cmd = new Deno.Command(config.ffprobePath, {
       args: [
-        '-v', 'quiet',
-        '-print_format', 'json',
+        '-v',
+        'quiet',
+        '-print_format',
+        'json',
         '-show_format',
         '-show_streams',
         filePath,
@@ -82,13 +94,15 @@ async function probeMedia(filePath: string): Promise<FfprobeData | null> {
 
     const json = JSON.parse(new TextDecoder().decode(output.stdout)) as {
       format?: { duration?: string; format_name?: string };
-      streams?: Array<{ codec_type: string; codec_name: string; channels?: number; sample_rate?: number }>;
+      streams?: Array<
+        { codec_type: string; codec_name: string; channels?: number; sample_rate?: number }
+      >;
     };
 
     return {
       duration: parseFloat(json.format?.duration || '0'),
       format: json.format?.format_name || 'unknown',
-      streams: (json.streams || []).map(s => ({
+      streams: (json.streams || []).map((s) => ({
         codec_type: s.codec_type,
         codec_name: s.codec_name,
         channels: s.channels,
@@ -155,10 +169,27 @@ const video_transcribe: Tool = {
     name: 'video_transcribe',
     description: 'Transcribe video/audio to text using Whisper API or local ffmpeg extraction',
     params: [
-      { name: 'file_path', type: 'string', description: 'Path to video or audio file', required: true },
+      {
+        name: 'file_path',
+        type: 'string',
+        description: 'Path to video or audio file',
+        required: true,
+      },
       { name: 'language', type: 'string', description: 'Language code (ISO 639-1)', default: 'en' },
-      { name: 'output', type: 'string', description: 'Output format', default: 'text', enum: ['text', 'srt', 'vtt', 'json'] },
-      { name: 'model', type: 'string', description: 'Transcription model or engine', default: 'whisper-1', enum: ['whisper-1', 'whisper-local', 'ffmpeg-extract'] },
+      {
+        name: 'output',
+        type: 'string',
+        description: 'Output format',
+        default: 'text',
+        enum: ['text', 'srt', 'vtt', 'json'],
+      },
+      {
+        name: 'model',
+        type: 'string',
+        description: 'Transcription model or engine',
+        default: 'whisper-1',
+        enum: ['whisper-1', 'whisper-local', 'ffmpeg-extract'],
+      },
     ],
     capabilities: ['shell:run', 'fs:read'],
   },
@@ -167,10 +198,17 @@ const video_transcribe: Tool = {
     try {
       const filePath = args.file_path;
       if (!filePath || typeof filePath !== 'string') {
-        return { toolName: 'video_transcribe', success: false, output: '', error: 'file_path must be a non-empty string', durationMs: Date.now() - start };
+        return {
+          toolName: 'video_transcribe',
+          success: false,
+          output: '',
+          error: 'file_path must be a non-empty string',
+          durationMs: Date.now() - start,
+        };
       }
 
-      const language = (typeof args.language === 'string' && args.language) || config.defaultLanguage || 'en';
+      const language = (typeof args.language === 'string' && args.language) ||
+        config.defaultLanguage || 'en';
       const outputFmt = (typeof args.output === 'string' && args.output) || 'text';
       const model = (typeof args.model === 'string' && args.model) || 'whisper-1';
 
@@ -188,7 +226,12 @@ const video_transcribe: Tool = {
           duration: probe ? formatDuration(probe.duration) : 'unknown',
           transcription,
         };
-        return { toolName: 'video_transcribe', success: true, output: JSON.stringify(result, null, 2), durationMs: Date.now() - start };
+        return {
+          toolName: 'video_transcribe',
+          success: true,
+          output: JSON.stringify(result, null, 2),
+          durationMs: Date.now() - start,
+        };
       }
 
       // Option 2: Extract audio with ffmpeg and use local whisper
@@ -196,23 +239,58 @@ const video_transcribe: Tool = {
         try {
           const tempWav = `/tmp/cortexprism_transcribe_${Date.now()}.wav`;
           const extractCmd = new Deno.Command(config.ffmpegPath, {
-            args: ['-i', filePath, '-vn', '-acodec', 'pcm_s16le', '-ar', '16000', '-ac', '1', tempWav, '-y'],
+            args: [
+              '-i',
+              filePath,
+              '-vn',
+              '-acodec',
+              'pcm_s16le',
+              '-ar',
+              '16000',
+              '-ac',
+              '1',
+              tempWav,
+              '-y',
+            ],
           });
           await extractCmd.output();
 
           const whisperCmd = new Deno.Command('whisper', {
-            args: [tempWav, '--language', language, '--model', config.whisperModel, '--output_format', outputFmt],
+            args: [
+              tempWav,
+              '--language',
+              language,
+              '--model',
+              config.whisperModel,
+              '--output_format',
+              outputFmt,
+            ],
             stdout: 'piped',
           });
           const whisperOut = await whisperCmd.output();
           const text = new TextDecoder().decode(whisperOut.stdout);
 
           // Cleanup temp file
-          try { await Deno.remove(tempWav); } catch { /* ignore */ }
+          try {
+            await Deno.remove(tempWav);
+          } catch { /* ignore */ }
 
-          return { toolName: 'video_transcribe', success: true, output: text, durationMs: Date.now() - start };
+          return {
+            toolName: 'video_transcribe',
+            success: true,
+            output: text,
+            durationMs: Date.now() - start,
+          };
         } catch (e) {
-          return { toolName: 'video_transcribe', success: false, output: '', error: `Local whisper failed: ${e instanceof Error ? e.message : String(e)}. Ensure whisper is installed (pip install openai-whisper).`, durationMs: Date.now() - start };
+          return {
+            toolName: 'video_transcribe',
+            success: false,
+            output: '',
+            error: `Local whisper failed: ${
+              e instanceof Error ? e.message : String(e)
+            }. Ensure whisper is installed (pip install openai-whisper).`,
+            durationMs: Date.now() - start,
+          };
         }
       }
 
@@ -220,9 +298,15 @@ const video_transcribe: Tool = {
       try {
         const probeData = await probeMedia(filePath);
         if (!probeData) {
-          return { toolName: 'video_transcribe', success: false, output: '', error: `Could not probe media file: ${filePath}`, durationMs: Date.now() - start };
+          return {
+            toolName: 'video_transcribe',
+            success: false,
+            output: '',
+            error: `Could not probe media file: ${filePath}`,
+            durationMs: Date.now() - start,
+          };
         }
-        const audioStreams = probeData.streams.filter(s => s.codec_type === 'audio');
+        const audioStreams = probeData.streams.filter((s) => s.codec_type === 'audio');
         const result = {
           file: filePath,
           language,
@@ -233,12 +317,29 @@ const video_transcribe: Tool = {
             ? `Found ${audioStreams.length} audio stream(s). Configure whisperApiKey for full transcription.`
             : 'No audio streams found. File may be video-only.',
         };
-        return { toolName: 'video_transcribe', success: true, output: JSON.stringify(result, null, 2), durationMs: Date.now() - start };
+        return {
+          toolName: 'video_transcribe',
+          success: true,
+          output: JSON.stringify(result, null, 2),
+          durationMs: Date.now() - start,
+        };
       } catch (e) {
-        return { toolName: 'video_transcribe', success: false, output: '', error: `ffprobe failed: ${e instanceof Error ? e.message : String(e)}`, durationMs: Date.now() - start };
+        return {
+          toolName: 'video_transcribe',
+          success: false,
+          output: '',
+          error: `ffprobe failed: ${e instanceof Error ? e.message : String(e)}`,
+          durationMs: Date.now() - start,
+        };
       }
     } catch (error) {
-      return { toolName: 'video_transcribe', success: false, output: '', error: `Failed to transcribe: ${error instanceof Error ? error.message : String(error)}`, durationMs: Date.now() - start };
+      return {
+        toolName: 'video_transcribe',
+        success: false,
+        output: '',
+        error: `Failed to transcribe: ${error instanceof Error ? error.message : String(error)}`,
+        durationMs: Date.now() - start,
+      };
     }
   },
 };
@@ -252,9 +353,24 @@ const video_translate: Tool = {
     name: 'video_translate',
     description: 'Translate a transcript to another language using configured translation service',
     params: [
-      { name: 'transcript', type: 'string', description: 'Transcript text to translate', required: true },
-      { name: 'target_language', type: 'string', description: 'Target language ISO 639-1 code', required: true },
-      { name: 'source_language', type: 'string', description: 'Source language ISO 639-1 code', default: 'en' },
+      {
+        name: 'transcript',
+        type: 'string',
+        description: 'Transcript text to translate',
+        required: true,
+      },
+      {
+        name: 'target_language',
+        type: 'string',
+        description: 'Target language ISO 639-1 code',
+        required: true,
+      },
+      {
+        name: 'source_language',
+        type: 'string',
+        description: 'Source language ISO 639-1 code',
+        default: 'en',
+      },
     ],
     capabilities: ['network:fetch'],
   },
@@ -264,13 +380,26 @@ const video_translate: Tool = {
       const transcript = args.transcript;
       const targetLang = args.target_language;
       if (!transcript || typeof transcript !== 'string') {
-        return { toolName: 'video_translate', success: false, output: '', error: 'transcript is required', durationMs: Date.now() - start };
+        return {
+          toolName: 'video_translate',
+          success: false,
+          output: '',
+          error: 'transcript is required',
+          durationMs: Date.now() - start,
+        };
       }
       if (!targetLang || typeof targetLang !== 'string') {
-        return { toolName: 'video_translate', success: false, output: '', error: 'target_language is required', durationMs: Date.now() - start };
+        return {
+          toolName: 'video_translate',
+          success: false,
+          output: '',
+          error: 'target_language is required',
+          durationMs: Date.now() - start,
+        };
       }
 
-      const sourceLang = (typeof args.source_language === 'string' && args.source_language) || config.defaultLanguage || 'en';
+      const sourceLang = (typeof args.source_language === 'string' && args.source_language) ||
+        config.defaultLanguage || 'en';
 
       // Use OpenAI-compatible translation if API key is configured
       if (config.whisperApiKey) {
@@ -285,7 +414,8 @@ const video_translate: Tool = {
             messages: [
               {
                 role: 'system',
-                content: `You are a translator. Translate the following text from ${sourceLang} to ${targetLang}. Return ONLY the translated text, no explanations.`,
+                content:
+                  `You are a translator. Translate the following text from ${sourceLang} to ${targetLang}. Return ONLY the translated text, no explanations.`,
               },
               { role: 'user', content: transcript },
             ],
@@ -298,7 +428,21 @@ const video_translate: Tool = {
         if (res.ok) {
           const data = await res.json() as { choices: Array<{ message: { content: string } }> };
           const translation = data.choices?.[0]?.message?.content || '[Translation returned empty]';
-          return { toolName: 'video_translate', success: true, output: JSON.stringify({ sourceLanguage: sourceLang, targetLanguage: targetLang, originalLength: transcript.length, translation }, null, 2), durationMs: Date.now() - start };
+          return {
+            toolName: 'video_translate',
+            success: true,
+            output: JSON.stringify(
+              {
+                sourceLanguage: sourceLang,
+                targetLanguage: targetLang,
+                originalLength: transcript.length,
+                translation,
+              },
+              null,
+              2,
+            ),
+            durationMs: Date.now() - start,
+          };
         }
       }
 
@@ -306,17 +450,28 @@ const video_translate: Tool = {
       return {
         toolName: 'video_translate',
         success: true,
-        output: JSON.stringify({
-          sourceLanguage: sourceLang,
-          targetLanguage: targetLang,
-          originalLength: transcript.length,
-          originalPreview: transcript.substring(0, 200) + (transcript.length > 200 ? '...' : ''),
-          note: 'Translation requires whisperApiKey config (uses OpenAI translation). Configure api key for full translation.',
-        }, null, 2),
+        output: JSON.stringify(
+          {
+            sourceLanguage: sourceLang,
+            targetLanguage: targetLang,
+            originalLength: transcript.length,
+            originalPreview: transcript.substring(0, 200) + (transcript.length > 200 ? '...' : ''),
+            note:
+              'Translation requires whisperApiKey config (uses OpenAI translation). Configure api key for full translation.',
+          },
+          null,
+          2,
+        ),
         durationMs: Date.now() - start,
       };
     } catch (error) {
-      return { toolName: 'video_translate', success: false, output: '', error: `Failed to translate: ${error instanceof Error ? error.message : String(error)}`, durationMs: Date.now() - start };
+      return {
+        toolName: 'video_translate',
+        success: false,
+        output: '',
+        error: `Failed to translate: ${error instanceof Error ? error.message : String(error)}`,
+        durationMs: Date.now() - start,
+      };
     }
   },
 };
@@ -332,7 +487,13 @@ const video_generate_captions: Tool = {
     params: [
       { name: 'file_path', type: 'string', description: 'Path to video file', required: true },
       { name: 'language', type: 'string', description: 'Language code', default: 'en' },
-      { name: 'format', type: 'string', description: 'Subtitle output format', default: 'srt', enum: ['srt', 'vtt', 'ass'] },
+      {
+        name: 'format',
+        type: 'string',
+        description: 'Subtitle output format',
+        default: 'srt',
+        enum: ['srt', 'vtt', 'ass'],
+      },
     ],
     capabilities: ['shell:run', 'fs:read'],
   },
@@ -341,10 +502,17 @@ const video_generate_captions: Tool = {
     try {
       const filePath = args.file_path;
       if (!filePath || typeof filePath !== 'string') {
-        return { toolName: 'video_generate_captions', success: false, output: '', error: 'file_path is required', durationMs: Date.now() - start };
+        return {
+          toolName: 'video_generate_captions',
+          success: false,
+          output: '',
+          error: 'file_path is required',
+          durationMs: Date.now() - start,
+        };
       }
 
-      const language = (typeof args.language === 'string' && args.language) || config.defaultLanguage || 'en';
+      const language = (typeof args.language === 'string' && args.language) ||
+        config.defaultLanguage || 'en';
       const fmt = (typeof args.format === 'string' && args.format) || 'srt';
 
       const probe = await probeMedia(filePath);
@@ -355,21 +523,33 @@ const video_generate_captions: Tool = {
         const baseName = filePath.replace(/\.[^.]+$/, '');
         const subtitlePath = `${baseName}.${fmt}`;
 
-        try { await Deno.writeTextFile(subtitlePath, transcription); } catch {
-          return { toolName: 'video_generate_captions', success: false, output: '', error: `Could not write subtitle file: ${subtitlePath}`, durationMs: Date.now() - start };
+        try {
+          await Deno.writeTextFile(subtitlePath, transcription);
+        } catch {
+          return {
+            toolName: 'video_generate_captions',
+            success: false,
+            output: '',
+            error: `Could not write subtitle file: ${subtitlePath}`,
+            durationMs: Date.now() - start,
+          };
         }
 
         return {
           toolName: 'video_generate_captions',
           success: true,
-          output: JSON.stringify({
-            file: filePath,
-            language,
-            format: fmt,
-            subtitleFile: subtitlePath,
-            duration: probe ? formatDuration(probe.duration) : 'unknown',
-            transcription,
-          }, null, 2),
+          output: JSON.stringify(
+            {
+              file: filePath,
+              language,
+              format: fmt,
+              subtitleFile: subtitlePath,
+              duration: probe ? formatDuration(probe.duration) : 'unknown',
+              transcription,
+            },
+            null,
+            2,
+          ),
           durationMs: Date.now() - start,
         };
       }
@@ -379,7 +559,16 @@ const video_generate_captions: Tool = {
         const baseName = filePath.replace(/\.[^.]+$/, '');
         const subtitlePath = `${baseName}_extracted.${fmt}`;
         const cmd = new Deno.Command(config.ffmpegPath, {
-          args: ['-i', filePath, '-map', '0:s:0?', '-c:s', fmt === 'ass' ? 'ass' : fmt, subtitlePath, '-y'],
+          args: [
+            '-i',
+            filePath,
+            '-map',
+            '0:s:0?',
+            '-c:s',
+            fmt === 'ass' ? 'ass' : fmt,
+            subtitlePath,
+            '-y',
+          ],
           stdout: 'piped',
           stderr: 'piped',
         });
@@ -390,7 +579,17 @@ const video_generate_captions: Tool = {
           return {
             toolName: 'video_generate_captions',
             success: true,
-            output: JSON.stringify({ file: filePath, format: fmt, subtitleFile: subtitlePath, source: 'extracted from media container', note: 'Embedded subtitle stream extracted successfully' }, null, 2),
+            output: JSON.stringify(
+              {
+                file: filePath,
+                format: fmt,
+                subtitleFile: subtitlePath,
+                source: 'extracted from media container',
+                note: 'Embedded subtitle stream extracted successfully',
+              },
+              null,
+              2,
+            ),
             durationMs: Date.now() - start,
           };
         }
@@ -398,25 +597,46 @@ const video_generate_captions: Tool = {
         return {
           toolName: 'video_generate_captions',
           success: true,
-          output: JSON.stringify({
-            file: filePath,
-            format: fmt,
-            duration: probe ? formatDuration(probe.duration) : 'unknown',
-            note: 'No embedded subtitles found and no whisperApiKey configured. Configure whisperApiKey for AI-powered caption generation, or use files with embedded subtitle tracks.',
-            ffmpegOutput: stderr.substring(0, 500),
-          }, null, 2),
+          output: JSON.stringify(
+            {
+              file: filePath,
+              format: fmt,
+              duration: probe ? formatDuration(probe.duration) : 'unknown',
+              note:
+                'No embedded subtitles found and no whisperApiKey configured. Configure whisperApiKey for AI-powered caption generation, or use files with embedded subtitle tracks.',
+              ffmpegOutput: stderr.substring(0, 500),
+            },
+            null,
+            2,
+          ),
           durationMs: Date.now() - start,
         };
       } catch (e) {
         return {
           toolName: 'video_generate_captions',
           success: true,
-          output: JSON.stringify({ file: filePath, format: fmt, status: 'ffmpeg_not_available', note: 'Install ffmpeg for embedded subtitle extraction, or configure whisperApiKey for AI transcription.' }, null, 2),
+          output: JSON.stringify(
+            {
+              file: filePath,
+              format: fmt,
+              status: 'ffmpeg_not_available',
+              note:
+                'Install ffmpeg for embedded subtitle extraction, or configure whisperApiKey for AI transcription.',
+            },
+            null,
+            2,
+          ),
           durationMs: Date.now() - start,
         };
       }
     } catch (error) {
-      return { toolName: 'video_generate_captions', success: false, output: '', error: `Failed: ${error instanceof Error ? error.message : String(error)}`, durationMs: Date.now() - start };
+      return {
+        toolName: 'video_generate_captions',
+        success: false,
+        output: '',
+        error: `Failed: ${error instanceof Error ? error.message : String(error)}`,
+        durationMs: Date.now() - start,
+      };
     }
   },
 };
@@ -431,10 +651,25 @@ const video_extract_clip: Tool = {
     description: 'Extract a clip from a video file using ffmpeg',
     params: [
       { name: 'file_path', type: 'string', description: 'Path to video file', required: true },
-      { name: 'start_time', type: 'string', description: 'Start time (seconds or HH:MM:SS)', required: true },
-      { name: 'duration', type: 'string', description: 'Duration in seconds or HH:MM:SS', required: true },
+      {
+        name: 'start_time',
+        type: 'string',
+        description: 'Start time (seconds or HH:MM:SS)',
+        required: true,
+      },
+      {
+        name: 'duration',
+        type: 'string',
+        description: 'Duration in seconds or HH:MM:SS',
+        required: true,
+      },
       { name: 'output_path', type: 'string', description: 'Output file path', required: true },
-      { name: 'reencode', type: 'boolean', description: 'Whether to re-encode (slower but more accurate)', default: false },
+      {
+        name: 'reencode',
+        type: 'boolean',
+        description: 'Whether to re-encode (slower but more accurate)',
+        default: false,
+      },
     ],
     capabilities: ['shell:run', 'fs:read'],
   },
@@ -447,10 +682,42 @@ const video_extract_clip: Tool = {
       const outputPath = args.output_path;
       const reencode = args.reencode === true;
 
-      if (!filePath || typeof filePath !== 'string') return { toolName: 'video_extract_clip', success: false, output: '', error: 'file_path is required', durationMs: Date.now() - start };
-      if (!startTime || typeof startTime !== 'string') return { toolName: 'video_extract_clip', success: false, output: '', error: 'start_time is required', durationMs: Date.now() - start };
-      if (!duration || typeof duration !== 'string') return { toolName: 'video_extract_clip', success: false, output: '', error: 'duration is required', durationMs: Date.now() - start };
-      if (!outputPath || typeof outputPath !== 'string') return { toolName: 'video_extract_clip', success: false, output: '', error: 'output_path is required', durationMs: Date.now() - start };
+      if (!filePath || typeof filePath !== 'string') {
+        return {
+          toolName: 'video_extract_clip',
+          success: false,
+          output: '',
+          error: 'file_path is required',
+          durationMs: Date.now() - start,
+        };
+      }
+      if (!startTime || typeof startTime !== 'string') {
+        return {
+          toolName: 'video_extract_clip',
+          success: false,
+          output: '',
+          error: 'start_time is required',
+          durationMs: Date.now() - start,
+        };
+      }
+      if (!duration || typeof duration !== 'string') {
+        return {
+          toolName: 'video_extract_clip',
+          success: false,
+          output: '',
+          error: 'duration is required',
+          durationMs: Date.now() - start,
+        };
+      }
+      if (!outputPath || typeof outputPath !== 'string') {
+        return {
+          toolName: 'video_extract_clip',
+          success: false,
+          output: '',
+          error: 'output_path is required',
+          durationMs: Date.now() - start,
+        };
+      }
 
       const probe = await probeMedia(filePath);
 
@@ -484,18 +751,45 @@ const video_extract_clip: Tool = {
             startTime,
             duration,
             reencode,
-            sourceInfo: probe ? { duration: formatDuration(probe.duration), format: probe.format } : null,
+            sourceInfo: probe
+              ? { duration: formatDuration(probe.duration), format: probe.format }
+              : null,
           };
-          return { toolName: 'video_extract_clip', success: true, output: JSON.stringify(resultData, null, 2), durationMs: Date.now() - start };
+          return {
+            toolName: 'video_extract_clip',
+            success: true,
+            output: JSON.stringify(resultData, null, 2),
+            durationMs: Date.now() - start,
+          };
         }
 
         const stderr = new TextDecoder().decode(result.stderr);
-        return { toolName: 'video_extract_clip', success: false, output: '', error: `ffmpeg error: ${stderr.substring(0, 500)}`, durationMs: Date.now() - start };
+        return {
+          toolName: 'video_extract_clip',
+          success: false,
+          output: '',
+          error: `ffmpeg error: ${stderr.substring(0, 500)}`,
+          durationMs: Date.now() - start,
+        };
       } catch (e) {
-        return { toolName: 'video_extract_clip', success: false, output: '', error: `ffmpeg not available: ${e instanceof Error ? e.message : String(e)}. Install ffmpeg for clip extraction.`, durationMs: Date.now() - start };
+        return {
+          toolName: 'video_extract_clip',
+          success: false,
+          output: '',
+          error: `ffmpeg not available: ${
+            e instanceof Error ? e.message : String(e)
+          }. Install ffmpeg for clip extraction.`,
+          durationMs: Date.now() - start,
+        };
       }
     } catch (error) {
-      return { toolName: 'video_extract_clip', success: false, output: '', error: `Failed: ${error instanceof Error ? error.message : String(error)}`, durationMs: Date.now() - start };
+      return {
+        toolName: 'video_extract_clip',
+        success: false,
+        output: '',
+        error: `Failed: ${error instanceof Error ? error.message : String(error)}`,
+        durationMs: Date.now() - start,
+      };
     }
   },
 };
@@ -510,9 +804,24 @@ const video_extract_highlights: Tool = {
     description: 'Extract highlight reel from video based on transcript analysis',
     params: [
       { name: 'file_path', type: 'string', description: 'Path to video file', required: true },
-      { name: 'transcript', type: 'string', description: 'Transcript with timestamps for highlight detection', required: true },
-      { name: 'max_duration', type: 'number', description: 'Maximum highlight reel duration in seconds', default: 60 },
-      { name: 'output_path', type: 'string', description: 'Output file path for the highlight reel', required: false },
+      {
+        name: 'transcript',
+        type: 'string',
+        description: 'Transcript with timestamps for highlight detection',
+        required: true,
+      },
+      {
+        name: 'max_duration',
+        type: 'number',
+        description: 'Maximum highlight reel duration in seconds',
+        default: 60,
+      },
+      {
+        name: 'output_path',
+        type: 'string',
+        description: 'Output file path for the highlight reel',
+        required: false,
+      },
     ],
     capabilities: ['shell:run', 'fs:read'],
   },
@@ -521,10 +830,28 @@ const video_extract_highlights: Tool = {
     try {
       const filePath = args.file_path;
       const transcript = args.transcript;
-      if (!filePath || typeof filePath !== 'string') return { toolName: 'video_extract_highlights', success: false, output: '', error: 'file_path is required', durationMs: Date.now() - start };
-      if (!transcript || typeof transcript !== 'string') return { toolName: 'video_extract_highlights', success: false, output: '', error: 'transcript is required', durationMs: Date.now() - start };
+      if (!filePath || typeof filePath !== 'string') {
+        return {
+          toolName: 'video_extract_highlights',
+          success: false,
+          output: '',
+          error: 'file_path is required',
+          durationMs: Date.now() - start,
+        };
+      }
+      if (!transcript || typeof transcript !== 'string') {
+        return {
+          toolName: 'video_extract_highlights',
+          success: false,
+          output: '',
+          error: 'transcript is required',
+          durationMs: Date.now() - start,
+        };
+      }
 
-      const maxDuration = typeof args.max_duration === 'number' && args.max_duration > 0 ? args.max_duration : 60;
+      const maxDuration = typeof args.max_duration === 'number' && args.max_duration > 0
+        ? args.max_duration
+        : 60;
       const baseName = filePath.replace(/\.[^.]+$/, '');
       const outputPath = typeof args.output_path === 'string' && args.output_path
         ? args.output_path
@@ -534,7 +861,8 @@ const video_extract_highlights: Tool = {
 
       // Parse transcript for timestamps
       // Supports formats: [00:00:05] text, (00:05) text, 00:00:05 text, etc.
-      const timestampRegex = /(\[?\s*\(?\s*)(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\.(\d{1,3}))?\s*\)?\]?\s*-?\s*/g;
+      const timestampRegex =
+        /(\[?\s*\(?\s*)(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\.(\d{1,3}))?\s*\)?\]?\s*-?\s*/g;
       const segments: Array<{ start: number; text: string }> = [];
       let lastTime = 0;
 
@@ -558,12 +886,17 @@ const video_extract_highlights: Tool = {
         return {
           toolName: 'video_extract_highlights',
           success: true,
-          output: JSON.stringify({
-            file: filePath,
-            status: 'no_timestamps_found',
-            note: 'Transcript did not contain recognizable timestamps. Use a timestamped transcript (e.g., SRT format) for highlight extraction.',
-            transcriptPreview: transcript.substring(0, 300),
-          }, null, 2),
+          output: JSON.stringify(
+            {
+              file: filePath,
+              status: 'no_timestamps_found',
+              note:
+                'Transcript did not contain recognizable timestamps. Use a timestamped transcript (e.g., SRT format) for highlight extraction.',
+              transcriptPreview: transcript.substring(0, 300),
+            },
+            null,
+            2,
+          ),
           durationMs: Date.now() - start,
         };
       }
@@ -580,11 +913,18 @@ const video_extract_highlights: Tool = {
 
         const cmd = new Deno.Command(config.ffmpegPath, {
           args: [
-            '-f', 'concat', '-safe', '0',
-            '-i', concatFilePath,
-            '-c', 'copy',
-            '-t', String(maxDuration),
-            outputPath, '-y',
+            '-f',
+            'concat',
+            '-safe',
+            '0',
+            '-i',
+            concatFilePath,
+            '-c',
+            'copy',
+            '-t',
+            String(maxDuration),
+            outputPath,
+            '-y',
           ],
           stdout: 'piped',
           stderr: 'piped',
@@ -592,42 +932,70 @@ const video_extract_highlights: Tool = {
         const result = await cmd.output();
 
         // Cleanup
-        try { await Deno.remove(concatFilePath); } catch { /* ignore */ }
+        try {
+          await Deno.remove(concatFilePath);
+        } catch { /* ignore */ }
 
         if (result.success) {
           return {
             toolName: 'video_extract_highlights',
             success: true,
-            output: JSON.stringify({
-              source: filePath,
-              output: outputPath,
-              segmentsCount: segments.length,
-              maxDuration,
-              sourceDuration: probe ? formatDuration(probe.duration) : 'unknown',
-              segments: segments.map(s => ({ start: formatDuration(s.start), text: s.text.substring(0, 100) })),
-            }, null, 2),
+            output: JSON.stringify(
+              {
+                source: filePath,
+                output: outputPath,
+                segmentsCount: segments.length,
+                maxDuration,
+                sourceDuration: probe ? formatDuration(probe.duration) : 'unknown',
+                segments: segments.map((s) => ({
+                  start: formatDuration(s.start),
+                  text: s.text.substring(0, 100),
+                })),
+              },
+              null,
+              2,
+            ),
             durationMs: Date.now() - start,
           };
         }
 
         const stderr = new TextDecoder().decode(result.stderr);
-        return { toolName: 'video_extract_highlights', success: false, output: '', error: `ffmpeg concat error: ${stderr.substring(0, 500)}`, durationMs: Date.now() - start };
+        return {
+          toolName: 'video_extract_highlights',
+          success: false,
+          output: '',
+          error: `ffmpeg concat error: ${stderr.substring(0, 500)}`,
+          durationMs: Date.now() - start,
+        };
       } catch (e) {
         return {
           toolName: 'video_extract_highlights',
           success: true,
-          output: JSON.stringify({
-            file: filePath,
-            status: 'ffmpeg_not_available',
-            note: 'Install ffmpeg for highlight reel generation.',
-            segmentsFound: segments.length,
-            segments: segments.map(s => ({ start: formatDuration(s.start), text: s.text.substring(0, 100) })),
-          }, null, 2),
+          output: JSON.stringify(
+            {
+              file: filePath,
+              status: 'ffmpeg_not_available',
+              note: 'Install ffmpeg for highlight reel generation.',
+              segmentsFound: segments.length,
+              segments: segments.map((s) => ({
+                start: formatDuration(s.start),
+                text: s.text.substring(0, 100),
+              })),
+            },
+            null,
+            2,
+          ),
           durationMs: Date.now() - start,
         };
       }
     } catch (error) {
-      return { toolName: 'video_extract_highlights', success: false, output: '', error: `Failed: ${error instanceof Error ? error.message : String(error)}`, durationMs: Date.now() - start };
+      return {
+        toolName: 'video_extract_highlights',
+        success: false,
+        output: '',
+        error: `Failed: ${error instanceof Error ? error.message : String(error)}`,
+        durationMs: Date.now() - start,
+      };
     }
   },
 };
@@ -646,7 +1014,9 @@ export async function onLoad(ctx: PluginContext): Promise<void> {
     ffprobePath: (cfg.ffprobePath as string) || 'ffprobe',
     defaultLanguage: (cfg.defaultLanguage as string) || 'en',
   };
-  ctx.logger.info(`[cortex-plugin-video-processor] Loaded with whisper model: ${config.whisperModel}`);
+  ctx.logger.info(
+    `[cortex-plugin-video-processor] Loaded with whisper model: ${config.whisperModel}`,
+  );
 }
 
 export async function onUnload(ctx: PluginContext): Promise<void> {
