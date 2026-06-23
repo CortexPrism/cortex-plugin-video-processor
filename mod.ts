@@ -13,7 +13,7 @@
  * ffmpeg commands and executes them via ctx.shell.run().
  */
 
-import type { PluginContext, Tool, ToolCallResult, ToolContext } from './types.ts';
+import type { PluginContext, Tool, ToolCallResult } from 'cortex/plugins';
 
 // ---------------------------------------------------------------------------
 // Configuration
@@ -194,7 +194,7 @@ const video_transcribe: Tool = {
     ],
     capabilities: ['shell:run', 'fs:read'],
   },
-  execute: async (args: Record<string, unknown>, ctx: ToolContext): Promise<ToolCallResult> => {
+  execute: async (args: Record<string, unknown>, ctx: PluginContext): Promise<ToolCallResult> => {
     const start = Date.now();
     try {
       const filePath = args.file_path;
@@ -375,7 +375,7 @@ const video_translate: Tool = {
     ],
     capabilities: ['network:fetch'],
   },
-  execute: async (args: Record<string, unknown>, _ctx: ToolContext): Promise<ToolCallResult> => {
+  execute: async (args: Record<string, unknown>, _ctx: PluginContext): Promise<ToolCallResult> => {
     const start = Date.now();
     try {
       const transcript = args.transcript;
@@ -498,7 +498,7 @@ const video_generate_captions: Tool = {
     ],
     capabilities: ['shell:run', 'fs:read'],
   },
-  execute: async (args: Record<string, unknown>, _ctx: ToolContext): Promise<ToolCallResult> => {
+  execute: async (args: Record<string, unknown>, _ctx: PluginContext): Promise<ToolCallResult> => {
     const start = Date.now();
     try {
       const filePath = args.file_path;
@@ -674,7 +674,7 @@ const video_extract_clip: Tool = {
     ],
     capabilities: ['shell:run', 'fs:read'],
   },
-  execute: async (args: Record<string, unknown>, _ctx: ToolContext): Promise<ToolCallResult> => {
+  execute: async (args: Record<string, unknown>, _ctx: PluginContext): Promise<ToolCallResult> => {
     const start = Date.now();
     try {
       const filePath = args.file_path;
@@ -826,7 +826,7 @@ const video_extract_highlights: Tool = {
     ],
     capabilities: ['shell:run', 'fs:read'],
   },
-  execute: async (args: Record<string, unknown>, _ctx: ToolContext): Promise<ToolCallResult> => {
+  execute: async (args: Record<string, unknown>, _ctx: PluginContext): Promise<ToolCallResult> => {
     const start = Date.now();
     try {
       const filePath = args.file_path;

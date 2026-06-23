@@ -1,6 +1,6 @@
 {
   "name": "cortex-plugin-video-processor",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Transcribe, translate, caption, clip video/audio files",
   "kind": "esm",
   "entryPoint": "mod.ts",
@@ -28,7 +28,7 @@
           "name": "language",
           "type": "string",
           "description": "Language code",
-          "default": "en"
+          "defaultValue": "en"
         },
         {
           "name": "output",
@@ -75,7 +75,7 @@
           "name": "source_language",
           "type": "string",
           "description": "Source language ISO code",
-          "default": "en"
+          "defaultValue": "en"
         }
       ]
     },
@@ -93,7 +93,7 @@
           "name": "language",
           "type": "string",
           "description": "Language code",
-          "default": "en"
+          "defaultValue": "en"
         },
         {
           "name": "format",
@@ -157,7 +157,7 @@
           "name": "max_duration",
           "type": "number",
           "description": "Maximum highlight reel duration in seconds",
-          "default": 60
+          "defaultValue": 60
         }
       ]
     }
@@ -172,15 +172,15 @@
             "label": "FFmpeg Path",
             "type": "text",
             "description": "Path to ffmpeg executable",
-            "default": "ffmpeg"
+            "defaultValue": "ffmpeg"
           },
           {
             "key": "whisperModel",
             "label": "Whisper Model",
             "type": "select",
             "description": "Default Whisper model size",
-            "default": "base",
-            "enum": [
+            "defaultValue": "base",
+            "options": [
               {
                 "label": "Tiny",
                 "value": "tiny"
@@ -209,7 +209,7 @@
   },
   "dependencies": {},
   "peerDependencies": {
-    "cortex": ">=1.0.0"
+    "cortex": ">=0.51.0"
   },
   "aiDisclosure": {
     "tools": [
